@@ -2,7 +2,7 @@
 This script will download, decompile, and search through android IoT apps for vulnerabilites. Given an app ID, it will search through the app for specified strings in the config.txt file. Once found it will output the resulting matches in an output text file named after the app ID. 
 
 ### How to use
-First get the app ID of the app you want to check. The app ID can be found in the URL on the google play store page, following the id= parameter. For example : ![](AppId.jpg)
+First get the app ID of the app you want to check. The app ID can be found in the URL on the google play store page, following the id= parameter. For example : ![](AppId.JPG)
 
 Then take the app Id and run the command below (ensure python is installed) : 
 ```
