@@ -33,13 +33,28 @@ def search(listOfStrings, packageLocation, output):
             lineNumber = 1
             while (line != ''):
                 #search through every line for all search terms
-                for string in listOfStrings:
+                for searchTerm in listOfStrings:
                     #make the search terms not case sensitive to reduce number of searches performed
                     caseInsensitiveLine = line.lower()
-                    currentString = caseInsensitiveLine.find(string.lower())
-                    if(currentString != -1):
+                    foundString = caseInsensitiveLine.find(searchTerm.lower())
+                    #if the term starts with the ! character, search for strings of size specified after the !
+                    if(searchTerm[0] == "!"):
+                        keyLength = int(searchTerm[1:])
+                        hits = []
+                        for i in range(0, len(line)-keyLength+1):
+                            charGroup = line[i:keyLength]
+                            if(charGroup.isalnum):
+                                hits.append(charGroup)
+                        #if we do find a string of that length, log it
+                        if(len(hits) != 0):
+                            hitsString = ", ".join(hits)
+                            output.write("STRING(S) OF LENGTH " + str(keyLength) + " FOUND IN: " + fileIndex + ", AT LINE: " + str(lineNumber) + ". STRINGS : " + hitsString + ". LINE : " + line)
+                        #if we dont, then skip the next part
+                        else:
+                            continue
+                    if(foundString != -1):
                         #instead of printing these, eventually log them by getting them all into a huge log string and storing it in the database
-                        output.write("FOR TERM " + string + ", MATCH IN: " + fileIndex + ", AT LINE: " + str(lineNumber) + ", LINE : " + line)
+                        output.write("FOR TERM " + searchTerm + ", MATCH IN: " + fileIndex + ", AT LINE: " + str(lineNumber) + ", LINE : " + line)
                 #always encompas the readline in a try catch block in case encoding errrors prevent us from reading a specific line
                 try:
                     line = openFile.readline()
@@ -48,12 +63,12 @@ def search(listOfStrings, packageLocation, output):
                 lineNumber += 1
             openFile.close()
         else:
-            for string in listOfStrings:
+            for searchTerm in listOfStrings:
                 caseInsensitiveIndex = fileIndex.lower()
                 #if the directory itself contains a suspicious name, log it
-                if(caseInsensitiveIndex.find(string.lower()) != -1):
+                if(caseInsensitiveIndex.find(searchTerm.lower()) != -1):
                     #instead of printing these, eventually log them by getting them all into a huge log string and storing it in the database
-                    output.write("FOR TERM " + string + ", SUSPICIOUS DIRECTORY FOUND AT: " + fileIndex)
+                    output.write("FOR TERM " + searchTerm + ", SUSPICIOUS DIRECTORY FOUND AT: " + fileIndex)
                 #if its is a directory, search through it recursively
                 if(os.path.exists(fileIndex)):
                     search(listOfStrings, fileIndex, output)
@@ -110,7 +125,12 @@ if(mode == 2 or mode == 0):
     subprocess.run(unpackage, shell=True)
 
 #open the output file
-outputFileName = apkName + "Output.txt"
+currentTime = str(datetime.datetime.now())
+currentTimeString = ""
+for char in currentTime:
+    if(char.isalnum()):
+        currentTimeString = currentTimeString + char
+outputFileName = apkName + currentTimeString
 output = open(outputFileName, "w")
 #get all words to search for
 configResults = openConfig()

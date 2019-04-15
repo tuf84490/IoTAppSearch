@@ -1,2 +1,4 @@
-oAuth
-Groovy
+secret
+client_id
+!32
+client_secret
