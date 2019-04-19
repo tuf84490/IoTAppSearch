@@ -19,3 +19,11 @@ python main.py com.example.app.id 1
 ```
 python main.py com.example.app.id 2
 ```
+#### config.txt example
+Specify which terms you would like to search for in the config.txt file. If you want to look for strings of a specific length (lets say, to look for an uninterrupted string of random letters or numbers that is 32 characters long, which describes what an oAuth secret key would look like) you would start the string with *!* and then specify how many characters long the string you want to search for must be. A sample config.txt file would look something like this
+```
+secret
+client_ID
+!32
+oAuth
+```
