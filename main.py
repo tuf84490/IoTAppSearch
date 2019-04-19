@@ -42,8 +42,8 @@ def search(listOfStrings, packageLocation, output):
                         keyLength = int(searchTerm[1:])
                         hits = []
                         for i in range(0, len(line)-keyLength+1):
-                            charGroup = line[i:keyLength]
-                            if(charGroup.isalnum):
+                            charGroup = line[i:keyLength+1]
+                            if(charGroup.isalnum() and (len(charGroup) >= keyLength)):
                                 hits.append(charGroup)
                         #if we do find a string of that length, log it
                         if(len(hits) != 0):
@@ -130,6 +130,7 @@ currentTimeString = ""
 for char in currentTime:
     if(char.isalnum()):
         currentTimeString = currentTimeString + char
+currentTimeString = currentTimeString + ".txt"
 outputFileName = apkName + currentTimeString
 output = open(outputFileName, "w")
 #get all words to search for
