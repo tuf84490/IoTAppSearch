@@ -3,6 +3,7 @@ import subprocess
 import os
 import sqlite3
 import datetime
+cache = []
 
 def openConfig():
     #search through the current directory for a specified string. Get input from config file and repeat for each string found in config file.
@@ -15,6 +16,14 @@ def openConfig():
         configLine = configFile.readline()
     configFile.close()
     return searchStrings
+#search through the cache to see if the specified string is in there or not
+def findInCache(entryString):
+    state = False
+    for x in cache:
+        if (x == entryString):
+            state = True
+            return state
+    return state
 
 #pass in a pointer to a log file that we write to whenever we find a match
 def search(listOfStrings, packageLocation, output):
@@ -42,19 +51,29 @@ def search(listOfStrings, packageLocation, output):
                         keyLength = int(searchTerm[1:])
                         hits = []
                         for i in range(0, len(line)-keyLength+1):
-                            charGroup = line[i:keyLength+1]
+                            charGroup = line[i:i+keyLength+1]
                             if(charGroup.isalnum() and (len(charGroup) >= keyLength)):
-                                hits.append(charGroup)
+                                #strings that pass as possible keys will sometimes just be huge words, this checks to make sure there is at least one digit, so it should help filter out the strings of just long words
+                                for x in charGroup:
+                                    if(x.isdecimal()):
+                                        hits.append(charGroup)
+                                        break
                         #if we do find a string of that length, log it
                         if(len(hits) != 0):
-                            hitsString = ", ".join(hits)
-                            output.write("STRING(S) OF LENGTH " + str(keyLength) + " FOUND IN: " + fileIndex + ", AT LINE: " + str(lineNumber) + ". STRINGS : " + hitsString + ". LINE : " + line)
+                            outputString = "STRING(S) OF LENGTH " + str(keyLength) + " FOUND IN: " + fileIndex + ", AT LINE: " + str(lineNumber) + ". LINE : " + line
+                            #if this entry has never been made before, add it to the cache of entries made this run, and write it to the file
+                            if(findInCache(outputString) == False):
+                                cache.append(outputString)
+                                output.write(outputString)
                         #if we dont, then skip the next part
                         else:
                             continue
                     if(foundString != -1):
-                        #instead of printing these, eventually log them by getting them all into a huge log string and storing it in the database
-                        output.write("FOR TERM " + searchTerm + ", MATCH IN: " + fileIndex + ", AT LINE: " + str(lineNumber) + ", LINE : " + line)
+                        outputString = "FOR TERM " + searchTerm + ", MATCH IN: " + fileIndex + ", AT LINE: " + str(lineNumber) + ", LINE : " + line
+                        #if this entry has never been made before, add it to the cache of entries made this run, and write it to the file
+                        if(findInCache(outputString) == False):
+                            cache.append(outputString)
+                            output.write(outputString)
                 #always encompas the readline in a try catch block in case encoding errrors prevent us from reading a specific line
                 try:
                     line = openFile.readline()
@@ -67,12 +86,14 @@ def search(listOfStrings, packageLocation, output):
                 caseInsensitiveIndex = fileIndex.lower()
                 #if the directory itself contains a suspicious name, log it
                 if(caseInsensitiveIndex.find(searchTerm.lower()) != -1):
-                    #instead of printing these, eventually log them by getting them all into a huge log string and storing it in the database
-                    output.write("FOR TERM " + searchTerm + ", SUSPICIOUS DIRECTORY FOUND AT: " + fileIndex)
+                    outputString = "FOR TERM " + searchTerm + ", SUSPICIOUS DIRECTORY FOUND AT: " + fileIndex
+                    #if this entry has never been made before, add it to the cache of entries made this run, and write it to the file
+                    if(findInCache(outputString) == False):
+                        cache.append(outputString)
+                        output.write(outputString)
                 #if its is a directory, search through it recursively
                 if(os.path.exists(fileIndex)):
                     search(listOfStrings, fileIndex, output)
-
 
 #get input cleanly. Will do both by default (mode = 0). If mode = 1 just download, if mode = 2 just unpackage/just scan
 inputs = len(sys.argv)
@@ -88,16 +109,6 @@ else:
 if(mode > 2 or mode < 0):
     print("ERROR. Mode can only be 1 for just download, 2 for just unpackage, or 0 for both (is by default, do not need to specify 0). Please try again.")
     sys.exit()
-
-database = sqlite3.connect("appStats.db")
-dbManager = database.cursor()
-command = """CREATE TABLE IF NOT EXISTS stats (
-                app_name VARCHAR(255),
-                date_checked DATETIME,
-                dangerous bit,
-                output_log MEDIUMTEXT
-            );"""
-dbManager.execute(command)
 
 download = "gplaycli --device-codename hammerhead -d " + link
 threshold = 10
